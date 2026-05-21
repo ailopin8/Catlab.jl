@@ -82,3 +82,16 @@ user-facing application. However, there is another project in the AlgebraicJulia
 ecosystem, [Semagrams.jl](https://github.com/AlgebraicJulia/Semagrams.jl)
 which does provide graphical user interfaces for interacting with wiring
 diagrams, Petri nets, and the like.
+
+## Experimental webapp (MVP)
+
+This repository now includes an additive, standalone webapp subproject in
+`/webapp`. It keeps Catlab as a core Julia library and adds an optional web
+layer for a small directed-graph workflow.
+
+- `POST /api/parse`: parse JSON payload into a Catlab graph representation
+- `POST /api/compute`: compute graph metrics (vertex/edge counts, in/out degrees)
+- `POST /api/render`: render a Graphviz DOT representation
+
+See [`webapp/README.md`](webapp/README.md) for local run, test, and deployment
+instructions.

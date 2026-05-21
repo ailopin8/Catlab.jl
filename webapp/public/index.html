@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catlab Webapp MVP</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+    textarea { width: 100%; min-height: 180px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button { margin-top: 0.75rem; padding: 0.5rem 1rem; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    pre { background: #f6f8fa; padding: 0.75rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Catlab Webapp MVP</h1>
+  <p>Submit a graph payload once, then inspect parse/compute/render API responses.</p>
+
+  <label for="payload">Graph JSON payload</label>
+  <textarea id="payload">{
+  "vertices": 4,
+  "edges": [
+    {"src": 1, "tgt": 2},
+    {"src": 2, "tgt": 3},
+    {"src": 3, "tgt": 4},
+    {"src": 1, "tgt": 4}
+  ]
+}</textarea>
+  <button id="analyze">Analyze graph</button>
+  <p id="status"></p>
+
+  <div class="grid">
+    <section>
+      <h2>Parse result</h2>
+      <pre id="parseOutput"></pre>
+    </section>
+    <section>
+      <h2>Compute result</h2>
+      <pre id="computeOutput"></pre>
+    </section>
+    <section>
+      <h2>Render result (Graphviz DOT)</h2>
+      <pre id="renderOutput"></pre>
+    </section>
+  </div>
+
+  <script>
+    const payloadInput = document.getElementById('payload');
+    const status = document.getElementById('status');
+
+    async function callApi(path, payload) {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        throw new Error(body.error || `Request failed: ${response.status}`);
+      }
+      return body;
+    }
+
+    async function analyze() {
+      status.textContent = '';
+      let payload;
+      try {
+        payload = JSON.parse(payloadInput.value);
+      } catch (err) {
+        status.textContent = `Invalid JSON: ${err.message}`;
+        return;
+      }
+
+      try {
+        const [parsed, computed, rendered] = await Promise.all([
+          callApi('/api/parse', payload),
+          callApi('/api/compute', payload),
+          callApi('/api/render', payload)
+        ]);
+
+        document.getElementById('parseOutput').textContent = JSON.stringify(parsed, null, 2);
+        document.getElementById('computeOutput').textContent = JSON.stringify(computed, null, 2);
+        document.getElementById('renderOutput').textContent = rendered.dot;
+      } catch (err) {
+        status.textContent = err.message;
+      }
+    }
+
+    document.getElementById('analyze').addEventListener('click', analyze);
+  </script>
+</body>
+</html>
