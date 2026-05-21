@@ -43,8 +43,8 @@ end
     metrics = body[:metrics]
     @test metrics[:vertex_count] == 3
     @test metrics[:edge_count] == 3
-    @test copy(metrics[:out_degrees]) == [2, 1, 0]
-    @test copy(metrics[:in_degrees]) == [0, 1, 2]
+    @test metrics[:out_degrees] == [2, 1, 0]
+    @test metrics[:in_degrees] == [0, 1, 2]
   end
 
   @testset "Render endpoint" begin
