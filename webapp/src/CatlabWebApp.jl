@@ -15,15 +15,17 @@ end
 
 json_response(status::Integer, payload) = HTTP.Response(status, ["Content-Type" => "application/json"], JSON3.write(payload))
 
-function parse_graph_payload(body)
-  data = JSON3.read(body; dicttype=Dict{String,Any})
+json_get(x, key::Symbol, default=nothing) = haskey(x, key) ? x[key] : default
 
-  vertices = get(data, "vertices", nothing)
+function parse_graph_payload(body)
+  data = JSON3.read(body)
+
+  vertices = json_get(data, :vertices, nothing)
   if !(vertices isa Integer) || vertices < 0
     throw(ApiError("`vertices` must be a non-negative integer", 400))
   end
 
-  raw_edges = get(data, "edges", Any[])
+  raw_edges = json_get(data, :edges, Any[])
   if !(raw_edges isa AbstractVector)
     throw(ApiError("`edges` must be an array", 400))
   end
@@ -34,8 +36,8 @@ function parse_graph_payload(body)
       throw(ApiError("edge $(i) must be an object with `src` and `tgt`", 400))
     end
 
-    s = get(edge, "src", nothing)
-    t = get(edge, "tgt", nothing)
+    s = json_get(edge, :src, nothing)
+    t = json_get(edge, :tgt, nothing)
     if !(s isa Integer) || !(t isa Integer)
       throw(ApiError("edge $(i) must use integer `src` and `tgt`", 400))
     end
@@ -105,7 +107,7 @@ end
 function handle_request(req::HTTP.Request)
   try
     method = String(req.method)
-    path = HTTP.URIs.path(req.target)
+    path = String(req.target)
 
     if method == "GET" && path == "/"
       return HTTP.Response(200, ["Content-Type" => "text/html; charset=utf-8"], read(INDEX_PATH, String))

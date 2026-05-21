@@ -4,7 +4,7 @@ using JSON3
 using CatlabWebApp
 
 function parse_json_response(resp::HTTP.Response)
-  JSON3.read(String(resp.body); dicttype=Dict{String,Any})
+  JSON3.read(String(resp.body))
 end
 
 @testset "CatlabWebApp API" begin
@@ -12,7 +12,7 @@ end
     resp = handle_request(HTTP.Request("GET", "/api/health"))
     @test resp.status == 200
     body = parse_json_response(resp)
-    @test body["status"] == "ok"
+    @test body[:status] == "ok"
   end
 
   payload = Dict(
@@ -30,8 +30,8 @@ end
 
     @test resp.status == 200
     body = parse_json_response(resp)
-    @test length(body["graph"]["vertices"]) == 3
-    @test length(body["graph"]["edges"]) == 3
+    @test length(body[:graph][:vertices]) == 3
+    @test length(body[:graph][:edges]) == 3
   end
 
   @testset "Compute endpoint" begin
@@ -40,11 +40,11 @@ end
 
     @test resp.status == 200
     body = parse_json_response(resp)
-    metrics = body["metrics"]
-    @test metrics["vertex_count"] == 3
-    @test metrics["edge_count"] == 3
-    @test metrics["out_degrees"] == [2, 1, 0]
-    @test metrics["in_degrees"] == [0, 1, 2]
+    metrics = body[:metrics]
+    @test metrics[:vertex_count] == 3
+    @test metrics[:edge_count] == 3
+    @test copy(metrics[:out_degrees]) == [2, 1, 0]
+    @test copy(metrics[:in_degrees]) == [0, 1, 2]
   end
 
   @testset "Render endpoint" begin
@@ -53,8 +53,8 @@ end
 
     @test resp.status == 200
     body = parse_json_response(resp)
-    @test occursin("digraph CatlabGraph", body["dot"])
-    @test occursin("v1 -> v2", body["dot"])
+    @test occursin("digraph CatlabGraph", String(body[:dot]))
+    @test occursin("v1 -> v2", String(body[:dot]))
   end
 
   @testset "Validation error" begin
@@ -64,6 +64,6 @@ end
 
     @test resp.status == 400
     body = parse_json_response(resp)
-    @test occursin("outside", body["error"])
+    @test occursin("outside", String(body[:error]))
   end
 end
